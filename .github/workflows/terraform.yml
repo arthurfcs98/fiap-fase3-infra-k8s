@@ -1,0 +1,85 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main, homolog]
+    paths: ['terraform/**', '.github/workflows/terraform.yml']
+  pull_request:
+    paths: ['terraform/**', '.github/workflows/terraform.yml']
+
+env:
+  TF_IN_AUTOMATION: "true"
+  AWS_REGION: us-east-1
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        run: |
+          aws configure set aws_access_key_id     "${{ secrets.AWS_ACCESS_KEY_ID }}"     --profile default
+          aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}" --profile default
+          aws configure set aws_session_token     "${{ secrets.AWS_SESSION_TOKEN }}"    --profile default
+          aws configure set region                "${{ env.AWS_REGION }}"               --profile default
+          aws sts get-caller-identity
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: terraform init -no-color
+
+      - name: Terraform validate
+        run: terraform validate -no-color
+
+      - name: Terraform plan
+        run: |
+          ENV="${{ github.base_ref || github.ref_name }}"
+          [ "$ENV" = "main" ] && ENV="prod"
+          [ "$ENV" = "homolog" ] && ENV="homolog"
+          [ -z "$ENV" ] && ENV="homolog"
+          echo "Planning for env=$ENV"
+          terraform plan -var-file="../envs/$ENV/terraform.tfvars" -no-color -input=false
+
+  apply:
+    name: Apply
+    needs: plan
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/homolog')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        run: |
+          aws configure set aws_access_key_id     "${{ secrets.AWS_ACCESS_KEY_ID }}"     --profile default
+          aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}" --profile default
+          aws configure set aws_session_token     "${{ secrets.AWS_SESSION_TOKEN }}"    --profile default
+          aws configure set region                "${{ env.AWS_REGION }}"               --profile default
+
+      - name: Terraform init
+        run: terraform init -no-color
+
+      - name: Terraform apply
+        run: |
+          ENV="${{ github.ref_name }}"
+          [ "$ENV" = "main" ] && ENV="prod"
+          terraform apply -var-file="../envs/$ENV/terraform.tfvars" -auto-approve -no-color -input=false
