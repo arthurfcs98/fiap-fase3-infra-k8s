@@ -43,3 +43,30 @@ output "kubectl_config_command" {
   description = "Comando para configurar o kubectl"
   value       = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --region ${var.region} --profile fiap"
 }
+
+# Observability VM outputs
+output "grafana_url" {
+  description = "URL pública do Grafana (HTTP, basic auth)"
+  value       = module.observability.grafana_url
+}
+
+output "grafana_admin_password" {
+  description = "Senha do usuário admin do Grafana"
+  value       = module.observability.grafana_admin_password
+  sensitive   = true
+}
+
+output "otlp_http_endpoint" {
+  description = "Endpoint OTLP HTTP intra-VPC (clientes EKS e Lambdas usam isso)"
+  value       = module.observability.otlp_http_endpoint
+}
+
+output "observability_public_ip" {
+  description = "IP público da VM observability"
+  value       = module.observability.public_ip
+}
+
+output "observability_private_ip" {
+  description = "IP privado (intra-VPC) da VM observability"
+  value       = module.observability.private_ip
+}
