@@ -24,6 +24,11 @@ output "otlp_http_endpoint" {
   value       = "http://${aws_instance.observability.private_ip}:4318"
 }
 
+output "loki_endpoint" {
+  description = "Endpoint Loki (intra-VPC, base URL sem path)"
+  value       = "http://${aws_instance.observability.private_ip}:3100"
+}
+
 output "security_group_id" {
   description = "Security group da VM"
   value       = aws_security_group.observability.id
