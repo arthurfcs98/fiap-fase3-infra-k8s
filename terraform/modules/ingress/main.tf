@@ -17,7 +17,9 @@ resource "helm_release" "nginx" {
           type = "LoadBalancer"
           annotations = {
             "service.beta.kubernetes.io/aws-load-balancer-type"                              = "nlb"
-            "service.beta.kubernetes.io/aws-load-balancer-scheme"                            = "internet-facing"
+            # internal: NLB so com IPs privados na VPC.
+            # API Gateway VPC Link só conecta com NLBs internos.
+            "service.beta.kubernetes.io/aws-load-balancer-scheme"                            = "internal"
             "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
           }
         }
