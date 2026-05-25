@@ -46,3 +46,12 @@ module "observability" {
   cluster_name  = var.cluster_name
   instance_type = "t3.small"
 }
+
+# Promtail no EKS empurra logs dos pods pra Loki na VM observability
+module "cluster_monitoring" {
+  source = "./modules/cluster-monitoring"
+
+  loki_endpoint = module.observability.loki_endpoint
+
+  depends_on = [module.eks, module.observability]
+}
