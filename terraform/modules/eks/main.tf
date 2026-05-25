@@ -19,23 +19,12 @@ resource "aws_eks_cluster" "main" {
   }
 }
 
-resource "aws_eks_access_entry" "admin" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.admin_role_arn
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "admin" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.admin_role_arn
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
-  }
-
-  depends_on = [aws_eks_access_entry.admin]
-}
+# NOTE: o `bootstrap_cluster_creator_admin_permissions = true` acima já cria
+# automaticamente uma EKS Access Entry para o criador (a role atual da
+# sessão Terraform, ex: voclabs). Tentar criar outra explicitamente resulta
+# em ResourceInUseException (409). A admin_role_arn permanece como variável
+# para compatibilidade futura; se precisar adicionar OUTRO admin (ex: uma
+# role distinta), criar um novo `aws_eks_access_entry` com nome diferente.
 
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
@@ -60,8 +49,4 @@ resource "aws_eks_node_group" "main" {
   tags = {
     Name = "${var.cluster_name}-ng"
   }
-
-  depends_on = [
-    aws_eks_access_policy_association.admin,
-  ]
 }
