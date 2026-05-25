@@ -16,7 +16,7 @@ resource "helm_release" "nginx" {
         service = {
           type = "LoadBalancer"
           annotations = {
-            "service.beta.kubernetes.io/aws-load-balancer-type"                              = "nlb"
+            "service.beta.kubernetes.io/aws-load-balancer-type" = "nlb"
             # internal: NLB so com IPs privados na VPC.
             # API Gateway VPC Link só conecta com NLBs internos.
             "service.beta.kubernetes.io/aws-load-balancer-scheme"                            = "internal"
